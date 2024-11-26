@@ -3,8 +3,8 @@ name: Execute SnowSQL Commands
 on:
   push:
     branches:
-      - main  # Runs on pushes to the main branch
-  workflow_dispatch:  # Allows manual trigger of the workflow
+      - main  # Trigger workflow on pushes to the main branch
+  workflow_dispatch:  # Allow manual trigger of the workflow
 
 jobs:
   execute-snowsql:
@@ -22,7 +22,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bash curl libssl-dev libffi-dev coreutils
 
-      # Step 3: Download and verify SnowSQL installer
+      # Step 3: Download and Verify SnowSQL Installer
       - name: Download and Verify SnowSQL Installer
         run: |
           echo "Downloading SnowSQL installer..."
@@ -31,8 +31,15 @@ jobs:
           echo "Downloading installer checksum..."
           curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.2-linux_x86_64.sha256
 
+          echo "Extracting the checksum value..."
+          CHECKSUM=$(cat snowsql-1.3.2-linux_x86_64.sha256 | awk '{print $1}')
+          if [ -z "$CHECKSUM" ]; then
+            echo "Checksum extraction failed! Exiting..."
+            exit 1
+          fi
+
           echo "Verifying checksum..."
-          sha256sum -c snowsql-1.3.2-linux_x86_64.sha256 || { 
+          echo "$CHECKSUM  snowsql-1.3.2-linux_x86_64.bash" | sha256sum -c - || { 
             echo "Checksum verification failed!"; 
             exit 1; 
           }
@@ -61,7 +68,7 @@ jobs:
             exit 1; 
           }
 
-      # Step 5: Run SnowSQL query
+      # Step 5: Run SnowSQL Query
       - name: Run SnowSQL Query
         env:
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWSQL_ACCOUNT }}
