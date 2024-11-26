@@ -14,7 +14,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      
+      - name: Install SnowSQL
+        run: |
+          wget https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql -O snowsql
+          chmod +x snowsql
+          sudo mv snowsql /usr/local/bin/
+
       - name: Run SnowSQL Query
         env:
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWSQL_ACCOUNT }}
