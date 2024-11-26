@@ -3,50 +3,65 @@ name: Execute SnowSQL Commands
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main  # Runs on pushes to the main branch
+  workflow_dispatch:  # Allows manual trigger of the workflow
 
 jobs:
   execute-snowsql:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # Step 2: Install dependencies
       - name: Install Dependencies
         run: |
-          echo "Updating system and installing dependencies..."
+          echo "Updating system and installing required dependencies..."
           sudo apt-get update
-          sudo apt-get install -y bash curl coreutils
+          sudo apt-get install -y bash curl libssl-dev libffi-dev coreutils
 
+      # Step 3: Download and verify SnowSQL installer
+      - name: Download and Verify SnowSQL Installer
+        run: |
+          echo "Downloading SnowSQL installer..."
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.2-linux_x86_64.bash
+
+          echo "Downloading installer checksum..."
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.2-linux_x86_64.sha256
+
+          echo "Verifying checksum..."
+          sha256sum -c snowsql-1.3.2-linux_x86_64.sha256 || { 
+            echo "Checksum verification failed!"; 
+            exit 1; 
+          }
+
+      # Step 4: Install SnowSQL
       - name: Install SnowSQL
         run: |
           set -e  # Fail on first error
-          
-          echo "Downloading SnowSQL installer..."
-          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.2-linux_x86_64.bash
-          
-          if [ ! -f snowsql-1.3.2-linux_x86_64.bash ]; then
-            echo "Error: SnowSQL installer download failed."
-            exit 1
-          fi
 
+          echo "Making installer executable..."
           chmod +x snowsql-1.3.2-linux_x86_64.bash
 
-          echo "Running SnowSQL installer..."
-          ./snowsql-1.3.2-linux_x86_64.bash --debug > snowsql_install.log 2>&1 || { 
-            echo "SnowSQL installation failed. See the logs:"; 
+          echo "Running SnowSQL installer with a custom directory..."
+          ./snowsql-1.3.2-linux_x86_64.bash --install-dir=/home/runner/snowsql > snowsql_install.log 2>&1 || { 
+            echo "SnowSQL installation failed. Logs:"; 
             cat snowsql_install.log; 
             exit 1; 
           }
-          
-          echo "Installation complete. Verifying..."
+
+          echo "Adding SnowSQL to PATH..."
+          export PATH="/home/runner/snowsql/bin:$PATH"
+
+          echo "Verifying SnowSQL installation..."
           snowsql -v || { 
             echo "SnowSQL verification failed."; 
             exit 1; 
           }
 
+      # Step 5: Run SnowSQL query
       - name: Run SnowSQL Query
         env:
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWSQL_ACCOUNT }}
@@ -57,6 +72,8 @@ jobs:
           SNOWSQL_SCHEMA: ${{ secrets.SNOWSQL_SCHEMA }}
         run: |
           echo "Executing SnowSQL query..."
+          export PATH="/home/runner/snowsql/bin:$PATH"
+
           snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PASSWORD \
             -d $SNOWSQL_DATABASE -w $SNOWSQL_WAREHOUSE -s $SNOWSQL_SCHEMA \
             -f ./run_query.sql
