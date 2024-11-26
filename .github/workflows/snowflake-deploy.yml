@@ -16,13 +16,26 @@ jobs:
 
       - name: Install SnowSQL
         run: |
-          # Download SnowSQL installer script
+          set -e  # Exit immediately if any command fails
+          
+          # Log the current working directory
+          echo "Current directory: $(pwd)"
+          
+          # Download SnowSQL installer
+          echo "Downloading SnowSQL installer..."
           curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.2-linux_x86_64.bash
           
-          # Make the installer script executable
+          # Verify the file was downloaded
+          if [ ! -f snowsql-1.3.2-linux_x86_64.bash ]; then
+            echo "SnowSQL installer not found!"
+            exit 1
+          fi
+          
+          # Make the installer executable
           chmod +x snowsql-1.3.2-linux_x86_64.bash
           
-          # Run the installer
+          # Run the SnowSQL installer
+          echo "Running SnowSQL installer..."
           ./snowsql-1.3.2-linux_x86_64.bash
 
       - name: Run SnowSQL Query
@@ -34,6 +47,10 @@ jobs:
           SNOWSQL_WAREHOUSE: ${{ secrets.SNOWSQL_WAREHOUSE }}
           SNOWSQL_SCHEMA: ${{ secrets.SNOWSQL_SCHEMA }}
         run: |
+          # Log environment variables for debugging
+          echo "Running SnowSQL query..."
+          echo "Account: $SNOWSQL_ACCOUNT"
+          
           # Run the query file
           snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PASSWORD \
             -d $SNOWSQL_DATABASE -w $SNOWSQL_WAREHOUSE -s $SNOWSQL_SCHEMA \
