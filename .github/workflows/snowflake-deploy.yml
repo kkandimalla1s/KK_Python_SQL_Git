@@ -14,29 +14,40 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Install Dependencies
+        run: |
+          echo "Updating system and installing dependencies..."
+          sudo apt-get update
+          sudo apt-get install -y bash curl coreutils
+
       - name: Install SnowSQL
         run: |
-          set -e  # Exit immediately if any command fails
+          set -e  # Exit on the first error
           
-          # Log the current working directory
-          echo "Current directory: $(pwd)"
-          
-          # Download SnowSQL installer
+          # Download the SnowSQL installer
           echo "Downloading SnowSQL installer..."
           curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.2-linux_x86_64.bash
           
-          # Verify the file was downloaded
+          # Verify that the installer script was downloaded
           if [ ! -f snowsql-1.3.2-linux_x86_64.bash ]; then
-            echo "SnowSQL installer not found!"
+            echo "Error: SnowSQL installer download failed."
             exit 1
           fi
+          
+          # Log the first few lines of the installer script to verify its content
+          echo "Verifying the installer script content:"
+          head -n 10 snowsql-1.3.2-linux_x86_64.bash
           
           # Make the installer executable
           chmod +x snowsql-1.3.2-linux_x86_64.bash
           
-          # Run the SnowSQL installer
+          # Run the installer with debug mode and log output
           echo "Running SnowSQL installer..."
-          ./snowsql-1.3.2-linux_x86_64.bash
+          ./snowsql-1.3.2-linux_x86_64.bash --debug > snowsql_install.log 2>&1 || { 
+            echo "SnowSQL installation failed. See the logs:"; 
+            cat snowsql_install.log; 
+            exit 1; 
+          }
 
       - name: Run SnowSQL Query
         env:
@@ -47,11 +58,7 @@ jobs:
           SNOWSQL_WAREHOUSE: ${{ secrets.SNOWSQL_WAREHOUSE }}
           SNOWSQL_SCHEMA: ${{ secrets.SNOWSQL_SCHEMA }}
         run: |
-          # Log environment variables for debugging
-          echo "Running SnowSQL query..."
-          echo "Account: $SNOWSQL_ACCOUNT"
-          
-          # Run the query file
+          echo "Executing SnowSQL query..."
           snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PASSWORD \
             -d $SNOWSQL_DATABASE -w $SNOWSQL_WAREHOUSE -s $SNOWSQL_SCHEMA \
-            -f ./Update_SQL.sql
+            -f ./run_query.sql
