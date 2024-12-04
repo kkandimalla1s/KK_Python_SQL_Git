@@ -34,7 +34,8 @@ jobs:
         run: |
           echo "Executing SnowSQL query..."
           export PATH="/home/ubuntu/bin/snowsql:$PATH"
-
-          snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PASSWORD \
+          pwd
+          
+          /home/ubuntu/bin/snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PASSWORD \
             -d $SNOWSQL_DATABASE -w $SNOWSQL_WAREHOUSE -s $SNOWSQL_SCHEMA \
             -f ./Update_SQL.sql
