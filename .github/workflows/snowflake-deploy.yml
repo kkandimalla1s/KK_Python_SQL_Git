@@ -37,4 +37,4 @@ jobs:
 
           snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PASSWORD \
             -d $SNOWSQL_DATABASE -w $SNOWSQL_WAREHOUSE -s $SNOWSQL_SCHEMA \
-            -f ./run_query.sql
+            -f ./Update_SQL.sql
