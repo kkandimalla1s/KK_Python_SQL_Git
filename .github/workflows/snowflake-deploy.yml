@@ -33,7 +33,7 @@ jobs:
           SNOWSQL_SCHEMA: ${{ secrets.SNOWSQL_SCHEMA }}
         run: |
           echo "Executing SnowSQL query..."
-          export PATH="/home/ubuntu/bin:$PATH"
+          export PATH="/home/ubuntu/bin/snowsql:$PATH"
 
           snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PASSWORD \
             -d $SNOWSQL_DATABASE -w $SNOWSQL_WAREHOUSE -s $SNOWSQL_SCHEMA \
