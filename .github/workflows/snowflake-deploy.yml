@@ -22,52 +22,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bash curl libssl-dev libffi-dev coreutils
 
-      # Step 3: Download and Verify SnowSQL Installer
-      - name: Download and Verify SnowSQL Installer
-        run: |
-          echo "Downloading SnowSQL installer..."
-          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.2-linux_x86_64.bash
-
-          echo "Downloading installer checksum..."
-          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.2-linux_x86_64.sha256
-
-          echo "Extracting the checksum value..."
-          CHECKSUM=$(cat snowsql-1.3.2-linux_x86_64.sha256 | awk '{print $1}')
-          if [ -z "$CHECKSUM" ]; then
-            echo "Checksum extraction failed! Exiting..."
-            exit 1
-          fi
-
-          echo "Verifying checksum..."
-          echo "$CHECKSUM  snowsql-1.3.2-linux_x86_64.bash" | sha256sum -c - || { 
-            echo "Checksum verification failed!"; 
-            exit 1; 
-          }
-
-      # Step 4: Install SnowSQL
-      - name: Install SnowSQL
-        run: |
-          set -e  # Fail on first error
-
-          echo "Making installer executable..."
-          chmod +x snowsql-1.3.2-linux_x86_64.bash
-
-          echo "Running SnowSQL installer with a custom directory..."
-          ./snowsql-1.3.2-linux_x86_64.bash --install-dir=/home/runner/snowsql > snowsql_install.log 2>&1 || { 
-            echo "SnowSQL installation failed. Logs:"; 
-            cat snowsql_install.log; 
-            exit 1; 
-          }
-
-          echo "Adding SnowSQL to PATH..."
-          export PATH="/home/runner/snowsql/bin:$PATH"
-
-          echo "Verifying SnowSQL installation..."
-          snowsql -v || { 
-            echo "SnowSQL verification failed."; 
-            exit 1; 
-          }
-
       # Step 5: Run SnowSQL Query
       - name: Run SnowSQL Query
         env:
